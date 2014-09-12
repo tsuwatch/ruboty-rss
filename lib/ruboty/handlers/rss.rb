@@ -9,6 +9,7 @@ module Ruboty
       on(/subscribe rss (?<urls>.+)/, name: "subscribe", description: "Subscribe a new RSS feed (multiple urls separated by space)")
       on(/unsubscribe rss (?<id>.+)/, name: "unsubscribe", description: "Unsubscribe a new RSS feed")
       on(/list rss feeds/, name: "list", description: "List watching RSS feeds")
+      on(/fetch rss (?<id>.+)/, name: "immediate_fetch", description: "Fetch new items immediately")
 
       def initialize(*args)
         super(*args)
@@ -52,6 +53,22 @@ module Ruboty
           message.reply("No RSS feed")
         else
           message.reply(list.join("\n"))
+        end
+      end
+
+      def immediate_fetch(message)
+        id = message[:id].to_i
+        feed = feeds[id]
+        new_items = feed.new_items
+        if new_items.empty?
+          message.reply("No new item")
+        else
+          new_items.each do |item|
+            body = "New Entry: #{item.title}\n#{item.link}"
+            Message.new(
+              feed.attributes.symbolize_keys.except(:url, :id).merge(robot: robot)
+            ).reply(body)
+          end
         end
       end
 
